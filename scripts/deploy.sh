@@ -38,21 +38,125 @@ fi
 # Ensure common binary paths are in PATH (needed for non-interactive SSH sessions)
 export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
-# Verify dependencies are installed on the target EC2 host
+# Helper to install packages using the available package manager
+install_package() {
+    local package=$1
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update && sudo apt-get install -y "$package"
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y "$package"
+    else
+        error "No supported package manager found (apt-get or yum) to install $package."
+        return 1
+    fi
+}
+
+# Helper to install AWS CLI
+install_aws_cli() {
+    log "AWS CLI ('aws') is not installed. Attempting automatic installation..."
+    
+    if ! command -v curl &> /dev/null; then
+        log "curl is not installed. Installing curl..."
+        install_package curl || return 1
+    fi
+    
+    if ! command -v unzip &> /dev/null; then
+        log "unzip is not installed. Installing unzip..."
+        install_package unzip || return 1
+    fi
+    
+    local arch
+    arch=$(uname -m)
+    local download_url=""
+    if [ "$arch" = "x86_64" ]; then
+        download_url="https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+    elif [ "$arch" = "aarch64" ]; then
+        download_url="https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip"
+    else
+        error "Unsupported architecture for automatic AWS CLI installation: $arch"
+        return 1
+    fi
+    
+    log "Downloading AWS CLI from $download_url..."
+    if ! curl -sL "$download_url" -o "/tmp/awscliv2.zip"; then
+        error "Failed to download AWS CLI."
+        return 1
+    fi
+    
+    log "Extracting AWS CLI..."
+    if ! unzip -q "/tmp/awscliv2.zip" -d "/tmp"; then
+        error "Failed to extract AWS CLI."
+        rm -f "/tmp/awscliv2.zip"
+        return 1
+    fi
+    
+    log "Running AWS CLI installer..."
+    if ! sudo "/tmp/aws/install"; then
+        error "Failed to install AWS CLI."
+        rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
+        return 1
+    fi
+    
+    rm -rf "/tmp/awscliv2.zip" "/tmp/aws"
+    export PATH="/usr/local/bin:$PATH"
+    
+    if ! command -v aws &> /dev/null; then
+        error "AWS CLI installed, but 'aws' is still not found in PATH."
+        return 1
+    fi
+    
+    log "AWS CLI installed successfully!"
+    return 0
+}
+
+# Helper to install Docker
+install_docker() {
+    log "Docker ('docker') is not installed. Attempting automatic installation..."
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update && sudo apt-get install -y docker.io
+        sudo usermod -aG docker "$USER"
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y docker
+        sudo systemctl start docker
+        sudo systemctl enable docker
+        sudo usermod -aG docker "$USER"
+    else
+        error "No supported package manager found (apt-get or yum) to install Docker."
+        return 1
+    fi
+    
+    if ! command -v docker &> /dev/null; then
+        error "Docker installation failed."
+        return 1
+    fi
+    
+    log "Docker installed successfully!"
+    return 0
+}
+
+# Verify and auto-install dependencies
 if ! command -v aws &> /dev/null; then
-    error "AWS CLI ('aws') is not installed or not in PATH on the EC2 instance."
-    error "Please log in to your EC2 instance and install AWS CLI:"
-    error "  curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\""
-    error "  unzip awscliv2.zip && sudo ./aws/install"
-    exit 127
+    install_aws_cli || {
+        error "AWS CLI installation failed. Please install it manually."
+        exit 127
+    }
 fi
 
 if ! command -v docker &> /dev/null; then
-    error "Docker ('docker') is not installed or not in PATH on the EC2 instance."
-    error "Please log in to your EC2 instance and install Docker:"
-    error "  sudo apt-get update && sudo apt-get install -y docker.io"
-    error "  sudo usermod -aG docker \$USER (and log out/in again to apply)"
-    exit 127
+    install_docker || {
+        error "Docker installation failed. Please install it manually."
+        exit 127
+    }
+fi
+
+# Setup wrapper for docker if it requires sudo privileges
+if ! command docker ps &> /dev/null; then
+    if command -v sudo &> /dev/null && sudo docker ps &> /dev/null; then
+        log "Docker requires sudo privileges. Wrapping docker command with sudo."
+        docker() {
+            sudo docker "$@"
+        }
+    fi
 fi
 
 
