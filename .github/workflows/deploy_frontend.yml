@@ -31,7 +31,7 @@ jobs:
       # Step 4: Create environment file for Vite inside frontend directory
       - name: Create environment file
         run: |
-          echo "VITE_API_BASE_URL=https://65.2.144.178:5000" > frontend/.env.local
+          echo "VITE_API_BASE_URL=http://${{ secrets.EC2_HOST }}:8000" > frontend/.env.local
 
       # Step 5: Build the app inside frontend directory
       - name: Build Frontend app
