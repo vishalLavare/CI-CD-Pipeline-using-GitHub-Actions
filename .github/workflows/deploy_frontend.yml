@@ -1,0 +1,50 @@
+name: Deploy Frontend to S3 + CloudFront (Dev)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Configure AWS credentials
+      - name: Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_KEY }}
+          aws configure set default.region us-east-1
+
+      # Step 3: Clean install dependencies (adapted to frontend folder)
+      - name: Clean install dependencies
+        run: |
+          cd frontend
+          rm -rf node_modules package-lock.json
+          npm install
+
+      # Step 4: Create environment file for Vite inside frontend directory
+      - name: Create environment file
+        run: |
+          echo "VITE_API_BASE_URL=https://job.kwkjob.com:5000" > frontend/.env.local
+
+      # Step 5: Build the app inside frontend directory
+      - name: Build Frontend app
+        run: |
+          cd frontend
+          npm run build
+
+      # Step 6: Sync the build output folder (frontend/dist) to S3
+      - name: Sync with S3
+        run: |
+          aws s3 sync frontend/dist s3://app-smart-recruit --delete
+
+      # Step 7: Invalidate CloudFront cache
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CDN_ID }} --paths "/*"
