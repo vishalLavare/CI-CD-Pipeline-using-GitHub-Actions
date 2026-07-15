@@ -172,7 +172,7 @@ Create the ECR repository to store your Docker images:
 ```bash
 aws ecr create-repository \
     --repository-name devops-fastapi-app \
-    --region us-east-1 \
+    --region ap-south-1 \
     --image-scanning-configuration scanOnPush=true \
     --encryption-configuration encryptionType=AES256
 ```
@@ -182,7 +182,7 @@ aws ecr create-repository \
    ```bash
    aws s3api create-bucket \
        --bucket devops-frontend-static-bucket \
-       --region us-east-1
+       --region ap-south-1
    ```
 2. Disable public access (we will configure CloudFront to access it privately):
    ```bash
@@ -244,7 +244,7 @@ Navigate to your GitHub repository -> **Settings** -> **Secrets and variables** 
 | :--- | :--- |
 | `AWS_ACCESS_KEY_ID` | IAM User access key (must have permission to push to ECR, sync to S3, and invalidate CloudFront). |
 | `AWS_SECRET_ACCESS_KEY` | IAM User secret access key. |
-| `AWS_REGION` | AWS region of your infrastructure (e.g. `us-east-1`). |
+| `AWS_REGION` | AWS region of your infrastructure (e.g. `ap-south-1`). |
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS Account ID. |
 | `ECR_REPOSITORY` | ECR repository name (e.g. `devops-fastapi-app`). |
 | `EC2_HOST` | Public IP or DNS of the backend EC2 server. |
