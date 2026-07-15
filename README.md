@@ -92,30 +92,30 @@ sequenceDiagram
 project/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # [workflows/deploy.yml](file:///f:/project-cv/CICD%20project/.github/workflows/deploy.yml) - Dual-job CI/CD pipeline
+│       └── deploy.yml          # [workflows/deploy.yml]( CICD%20project/.github/workflows/deploy.yml) - Dual-job CI/CD pipeline
 ├── backend/
 │   ├── app/
-│   │   ├── main.py             # [backend/app/main.py](file:///f:/project-cv/CICD%20project/backend/app/main.py) - Uvicorn main + CORS configuration
-│   │   ├── routes.py           # [backend/app/routes.py](file:///f:/project-cv/CICD%20project/backend/app/routes.py) - Mock task db CRUD routes
-│   │   └── requirements.txt    # [backend/app/requirements.txt](file:///f:/project-cv/CICD%20project/backend/app/requirements.txt) - FastAPI dependencies
-│   ├── Dockerfile              # [backend/Dockerfile](file:///f:/project-cv/CICD%20project/backend/Dockerfile) - Multi-stage container file
-│   ├── .dockerignore           # [backend/.dockerignore](file:///f:/project-cv/CICD%20project/backend/.dockerignore) - Excluded container files
-│   └── docker-compose.yml      # [backend/docker-compose.yml](file:///f:/project-cv/CICD%20project/backend/docker-compose.yml) - Backend local orchestration
+│   │   ├── main.py             # [backend/app/main.py]( CICD%20project/backend/app/main.py) - Uvicorn main + CORS configuration
+│   │   ├── routes.py           # [backend/app/routes.py]( CICD%20project/backend/app/routes.py) - Mock task db CRUD routes
+│   │   └── requirements.txt    # [backend/app/requirements.txt]( CICD%20project/backend/app/requirements.txt) - FastAPI dependencies
+│   ├── Dockerfile              # [backend/Dockerfile]( CICD%20project/backend/Dockerfile) - Multi-stage container file
+│   ├── .dockerignore           # [backend/.dockerignore]( CICD%20project/backend/.dockerignore) - Excluded container files
+│   └── docker-compose.yml      # [backend/docker-compose.yml]( CICD%20project/backend/docker-compose.yml) - Backend local orchestration
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx             # [frontend/src/App.jsx](file:///f:/project-cv/CICD%20project/frontend/src/App.jsx) - React dynamic client
-│   │   ├── App.css             # [frontend/src/App.css](file:///f:/project-cv/CICD%20project/frontend/src/App.css) - Panel styles
-│   │   ├── index.css           # [frontend/src/index.css](file:///f:/project-cv/CICD%20project/frontend/src/index.css) - Palette setup
-│   │   └── main.jsx            # [frontend/src/main.jsx](file:///f:/project-cv/CICD%20project/frontend/src/main.jsx) - React DOM mounting
-│   ├── index.html              # [frontend/index.html](file:///f:/project-cv/CICD%20project/frontend/index.html) - Main layout
-│   ├── package.json            # [frontend/package.json](file:///f:/project-cv/CICD%20project/frontend/package.json) - Node.js scripts
-│   └── vite.config.js          # [frontend/vite.config.js](file:///f:/project-cv/CICD%20project/frontend/vite.config.js) - Bundler configurations
+│   │   ├── App.jsx             # [frontend/src/App.jsx]( CICD%20project/frontend/src/App.jsx) - React dynamic client
+│   │   ├── App.css             # [frontend/src/App.css]( CICD%20project/frontend/src/App.css) - Panel styles
+│   │   ├── index.css           # [frontend/src/index.css]( CICD%20project/frontend/src/index.css) - Palette setup
+│   │   └── main.jsx            # [frontend/src/main.jsx]( CICD%20project/frontend/src/main.jsx) - React DOM mounting
+│   ├── index.html              # [frontend/index.html]( CICD%20project/frontend/index.html) - Main layout
+│   ├── package.json            # [frontend/package.json]( CICD%20project/frontend/package.json) - Node.js scripts
+│   └── vite.config.js          # [frontend/vite.config.js]( CICD%20project/frontend/vite.config.js) - Bundler configurations
 ├── scripts/
-│   └── deploy.sh               # [scripts/deploy.sh](file:///f:/project-cv/CICD%20project/scripts/deploy.sh) - Remote shell container runner
+│   └── deploy.sh               # [scripts/deploy.sh]( CICD%20project/scripts/deploy.sh) - Remote shell container runner
 ├── screenshots/
-│   └── README.md               # [screenshots/README.md](file:///f:/project-cv/CICD%20project/screenshots/README.md) - Screenshot evidence checklist
-├── .gitignore                  # [.gitignore](file:///f:/project-cv/CICD%20project/.gitignore) - Git exclusion list
-└── README.md                   # [README.md](file:///f:/project-cv/CICD%20project/README.md) - Master documentation (this file)
+│   └── README.md               # [screenshots/README.md]( CICD%20project/screenshots/README.md) - Screenshot evidence checklist
+├── .gitignore                  # [.gitignore]( CICD%20project/.gitignore) - Git exclusion list
+└── README.md                   # [README.md]( CICD%20project/README.md) - Master documentation (this file)
 ```
 
 ---
@@ -277,7 +277,7 @@ Once the GitHub Actions workflow runs successfully and turns green, verify your 
 
 ### 7.2 CORS Blocks in Browser console (`Access-Control-Allow-Origin` missing)
 * **Cause:** The FastAPI backend does not permit cross-origin requests from the CloudFront HTTPS domain name.
-* **Fix:** Ensure CORS configurations are registered in [main.py](file:///f:/project-cv/CICD%20project/backend/app/main.py). For testing, allow `allow_origins=["*"]`. For production hardening, restrict it to `allow_origins=["https://<YOUR-DISTRIBUTION-ID>.cloudfront.net"]`.
+* **Fix:** Ensure CORS configurations are registered in [main.py]( CICD%20project/backend/app/main.py). For testing, allow `allow_origins=["*"]`. For production hardening, restrict it to `allow_origins=["https://<YOUR-DISTRIBUTION-ID>.cloudfront.net"]`.
 
 ### 7.3 `AccessDenied` when performing `s3 sync` or `create-invalidation`
 * **Cause:** The IAM user credentials configured in GitHub Secrets do not have the required permissions for S3 and CloudFront actions.
