@@ -42,7 +42,7 @@ jobs:
       # Step 6: Sync the build output folder (frontend/dist) to S3
       - name: Sync with S3
         run: |
-          aws s3 sync frontend/dist s3://cicdpipeline --delete
+          aws s3 sync frontend/dist s3://${{ secrets.AWS_S3_BUCKET }} --delete
 
       # Step 7: Invalidate CloudFront cache
       - name: Invalidate CloudFront cache

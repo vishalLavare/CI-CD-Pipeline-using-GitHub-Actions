@@ -35,6 +35,27 @@ if [ -z "$AWS_ACCOUNT_ID" ] || [ -z "$AWS_REGION" ] || [ -z "$ECR_REPOSITORY" ] 
     exit 1
 fi
 
+# Ensure common binary paths are in PATH (needed for non-interactive SSH sessions)
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
+# Verify dependencies are installed on the target EC2 host
+if ! command -v aws &> /dev/null; then
+    error "AWS CLI ('aws') is not installed or not in PATH on the EC2 instance."
+    error "Please log in to your EC2 instance and install AWS CLI:"
+    error "  curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\""
+    error "  unzip awscliv2.zip && sudo ./aws/install"
+    exit 127
+fi
+
+if ! command -v docker &> /dev/null; then
+    error "Docker ('docker') is not installed or not in PATH on the EC2 instance."
+    error "Please log in to your EC2 instance and install Docker:"
+    error "  sudo apt-get update && sudo apt-get install -y docker.io"
+    error "  sudo usermod -aG docker \$USER (and log out/in again to apply)"
+    exit 127
+fi
+
+
 ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
 
