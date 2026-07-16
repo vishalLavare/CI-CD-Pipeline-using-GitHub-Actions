@@ -1,163 +1,256 @@
-# 🚀 Full-Stack CI/CD Pipeline using GitHub Actions, Docker, Amazon ECR, EC2, S3 & CloudFront
+# 🚀 Production-Grade Full-Stack CI/CD Pipeline on AWS
 
-> Production-ready DevOps project demonstrating automated deployment of
-> a React frontend and FastAPI backend on AWS using GitHub Actions.
+<p align="center">
 
-## ✨ Features
+![AWS](https://img.shields.io/badge/AWS-Cloud-orange?logo=amazonaws)
+![Docker](https://img.shields.io/badge/Docker-Container-blue?logo=docker)
+![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-black?logo=githubactions)
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green?logo=fastapi)
+![React](https://img.shields.io/badge/React-Frontend-blue?logo=react)
+![Python](https://img.shields.io/badge/Python-3.12-yellow?logo=python)
+![License](https://img.shields.io/badge/License-MIT-success)
 
--   Automated CI/CD with GitHub Actions
--   React + Vite frontend hosted on Amazon S3
--   Global content delivery using Amazon CloudFront
--   FastAPI backend containerized with Docker
--   Docker images stored in Amazon ECR
--   Backend deployed on Amazon EC2
--   Health check endpoint (`/health`)
--   CRUD REST API
--   CORS enabled for frontend integration
--   Docker-based deployment with zero manual steps
+</p>
 
-## 🏗️ Architecture
+---
 
-``` text
-Developer
-    │
-    ▼
-GitHub Repository
-    │
-    ▼
-GitHub Actions
- ├──────────────┐
- ▼              ▼
-S3 + CloudFront ECR
-                  │
-                  ▼
-              EC2 + Docker
-                  │
-                  ▼
-              FastAPI (8000)
+## 📖 Overview
+
+This project demonstrates a **production-ready DevOps CI/CD pipeline** that automatically builds, tests, containerizes, and deploys a **React frontend** and **FastAPI backend** on AWS using **GitHub Actions**, **Docker**, **Amazon ECR**, **Amazon EC2**, **Amazon S3**, **Amazon CloudFront**, and **Application Load Balancer**.
+
+Whenever code is pushed to the **main** branch, GitHub Actions automatically deploys both frontend and backend without manual intervention.
+
+---
+
+# 🏗️ Architecture
+
+```text
+                Developer
+                    │
+             Push to GitHub
+                    │
+                    ▼
+            GitHub Actions CI/CD
+          ┌──────────┴──────────┐
+          │                     │
+          ▼                     ▼
+ Build React              Build Docker
+          │                     │
+          ▼                     ▼
+     Amazon S3             Amazon ECR
+          │                     │
+          ▼                     ▼
+   CloudFront CDN        Amazon EC2
+          │                     │
+          │              Docker Container
+          │                     │
+          └──────────────► Application Load Balancer
+                               │
+                               ▼
+                          FastAPI Backend
 ```
 
-## 🛠 Tech Stack
+---
 
-  Category     Technologies
-  ------------ -------------------------------------------
-  Frontend     React, Vite, JavaScript
-  Backend      FastAPI, Python
-  Containers   Docker
-  CI/CD        GitHub Actions
-  Cloud        Amazon EC2, ECR, S3, CloudFront, IAM, ALB
+# 🚀 Features
 
-## 📁 Project Structure
+✅ Automated CI/CD using GitHub Actions
 
-``` text
+✅ Multi-stage Docker Build
+
+✅ Amazon ECR Image Repository
+
+✅ Automatic EC2 Deployment
+
+✅ React Frontend on Amazon S3
+
+✅ Global Content Delivery using CloudFront
+
+✅ CRUD REST API using FastAPI
+
+✅ Dockerized Backend
+
+✅ Health Monitoring Endpoint
+
+✅ Secure IAM-based AWS Authentication
+
+✅ CORS Configuration
+
+✅ Production Deployment Workflow
+
+---
+
+# 🛠 Technology Stack
+
+| Category | Technologies |
+|-----------|-------------|
+| Frontend | React, Vite, JavaScript |
+| Backend | FastAPI, Python |
+| Containerization | Docker |
+| CI/CD | GitHub Actions |
+| Cloud | Amazon EC2, Amazon ECR, Amazon S3, CloudFront, ALB, IAM |
+
+---
+
+# ☁️ AWS Services Used
+
+- Amazon EC2
+- Amazon ECR
+- Amazon S3
+- Amazon CloudFront
+- Application Load Balancer
+- IAM
+- Security Groups
+
+---
+
+# 📁 Project Structure
+
+```text
 .
-├── .github/workflows/deploy.yml
-├── frontend/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+│
 ├── backend/
-├── scripts/deploy.sh
+│   ├── app/
+│   ├── Dockerfile
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── scripts/
+│   └── deploy.sh
+│
 └── README.md
 ```
 
-## 🔄 CI/CD Workflow
+---
 
-1.  Push code to `main`
-2.  GitHub Actions starts
-3.  Build React frontend
-4.  Upload frontend to S3
-5.  Invalidate CloudFront cache
-6.  Build Docker image
-7.  Push image to Amazon ECR
-8.  SSH into EC2
-9.  Pull latest image
-10. Restart Docker container
-11. Verify `/health`
+# 🔄 CI/CD Workflow
 
-## ☁️ AWS Services
+```text
+Git Push
+    │
+    ▼
+GitHub Actions
+    │
+    ├───────────────┐
+    │               │
+    ▼               ▼
+Build React    Build Docker
+    │               │
+    ▼               ▼
+Upload S3      Push Amazon ECR
+    │               │
+Invalidate CDN       │
+    │               ▼
+    │          SSH to EC2
+    │               │
+    │         Pull Latest Image
+    │               │
+    │      Restart Docker Container
+    │               │
+    └──────────────► Health Check
+```
 
--   Amazon EC2
--   Amazon ECR
--   Amazon S3
--   Amazon CloudFront
--   Application Load Balancer
--   IAM
+---
 
-## 🐳 Run Locally
+# 🚀 REST API
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | / | Welcome API |
+| GET | /health | Health Check |
+| GET | /api/v1/items | List Items |
+| POST | /api/v1/items | Create Item |
+| PUT | /api/v1/items/{id} | Update Item |
+| DELETE | /api/v1/items/{id} | Delete Item |
+
+---
+
+# 🐳 Run Locally
 
 ### Backend
 
-``` bash
+```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r app/requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload
 ```
 
 ### Frontend
 
-``` bash
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## 🚀 API
+---
 
-  Method   Endpoint             Description
-  -------- -------------------- --------------
-  GET      /                    Welcome
-  GET      /health              Health check
-  GET      /api/v1/items        List items
-  POST     /api/v1/items        Create item
-  PUT      /api/v1/items/{id}   Update item
-  DELETE   /api/v1/items/{id}   Delete item
+# 🔐 Security
 
-## 🔐 Security
+- IAM Role Authentication
+- Docker Images stored in Amazon ECR
+- Origin Access Control (OAC)
+- FastAPI CORS Middleware
+- Security Groups
+- Docker Container Isolation
 
--   IAM roles for AWS access
--   Private Docker images in Amazon ECR
--   CloudFront Origin Access Control (OAC)
--   FastAPI CORS middleware
--   Security Groups for network isolation
+---
 
-## ⚠️ Challenges & Solutions
+# ⚠️ Challenges Solved
 
-  Challenge                 Solution
-  ------------------------- -------------------------------------
-  CloudFront AccessDenied   Configured OAC and S3 bucket policy
-  Mixed Content             Planned HTTPS via ALB + ACM
-  CORS errors               Added FastAPI CORSMiddleware
-  Deployment automation     GitHub Actions + Docker + ECR
+| Problem | Solution |
+|----------|----------|
+| CloudFront 403 | Configured OAC + Bucket Policy |
+| Mixed Content | Planned HTTPS ALB + ACM |
+| CORS Issues | Configured CORSMiddleware |
+| Docker Deployment | Automated using GitHub Actions |
+| Zero Downtime Deployment | Automatic Container Restart |
 
-## 📸 Screenshots
+---
 
-Add screenshots for: - GitHub Actions - CloudFront - S3 - ECR - EC2 -
-ALB - Application Dashboard
+# 📸 Screenshots
 
-## 📈 Future Improvements
+| Dashboard |
+|-----------|
+| ![Dashboard](screenshots/img.png) |
 
--   HTTPS with ACM
--   Route 53 custom domain
--   Auto Scaling Group
--   Terraform IaC
--   CloudWatch monitoring
--   Blue/Green deployment
+---
 
-## 💼 Resume Summary
+# 📈 Future Enhancements
 
-**Full-Stack CI/CD Pipeline \| GitHub Actions, Docker, FastAPI, React,
-Amazon EC2, Amazon ECR, Amazon S3, CloudFront**
+- HTTPS using AWS Certificate Manager (ACM)
+- Route 53 Custom Domain
+- Auto Scaling Group
+- Terraform Infrastructure as Code
+- CloudWatch Monitoring
+- Blue-Green Deployment
+- AWS WAF Integration
 
-Designed and implemented a production-style CI/CD pipeline that
-automatically builds, tests, containerizes, and deploys a React frontend
-and FastAPI backend on AWS. Automated deployments using GitHub Actions,
-Docker, Amazon ECR, EC2, S3, and CloudFront while implementing health
-monitoring, CORS configuration, and secure cloud infrastructure.
+---
 
-## 👨‍💻 Author
+# 💼 Resume Project Description
+
+### Production-Grade Full-Stack CI/CD Pipeline on AWS
+
+Designed and deployed a production-ready DevOps pipeline using **GitHub Actions**, **Docker**, **Amazon ECR**, **Amazon EC2**, **Amazon S3**, and **CloudFront**. Automated frontend and backend deployments with Docker containerization, health monitoring, secure IAM authentication, and cloud-native infrastructure, demonstrating end-to-end CI/CD and AWS deployment best practices.
+
+---
+
+# 👨‍💻 Author
 
 **Vishal Lavare**
 
-Cloud Engineer \| AWS \| Docker \| GitHub Actions \| FastAPI \| React
+Cloud Engineer | AWS | Docker | GitHub Actions | FastAPI | React | CI/CD
 
-⭐ If you found this project useful, consider starring the repository.
+---
+
+⭐ **If you like this project, consider giving it a Star!**
