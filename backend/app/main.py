@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
+
 try:
     from app.routes import router
 except ModuleNotFoundError:
@@ -8,36 +9,69 @@ except ModuleNotFoundError:
 
 app = FastAPI(
     title="Production CI/CD FastAPI App",
-    description="Automated deployment project built with GitHub Actions, Docker, ECR, and EC2.",
+    description="Automated deployment project built with GitHub Actions, Docker, Amazon ECR, Docker, and EC2.",
     version="1.0.0"
 )
 
-# Enable CORS (Cross-Origin Resource Sharing)
+# ==========================================================
+# CORS Configuration
+# ==========================================================
+
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://dpop0vbtqm0t3.cloudfront.net",
+    "https://dpop0vbtqm0t3.cloudfront.net",
+    "http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Restrict to frontend origin domain in production
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include the CRUD API router with a clean API prefix
+# ==========================================================
+# Register API Routes
+# ==========================================================
+
 app.include_router(router, prefix="/api/v1")
 
+# ==========================================================
+# Root Endpoint
+# ==========================================================
+
 @app.get("/")
-def read_root():
+def root():
     return {
         "message": "Welcome to the Production CI/CD FastAPI Application!",
         "status": "Running",
         "version": "1.0.0",
-        "docs_url": "/docs"
+        "docs": "/docs",
+        "health": "/health"
     }
 
+# ==========================================================
+# Health Endpoint
+# ==========================================================
+
 @app.get("/health")
-def health_check():
-    """Endpoint for checking application status. Used in the CI/CD deployment validation script."""
+def health():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "environment": "production"
     }
+
+# ==========================================================
+# Startup Event
+# ==========================================================
+
+@app.on_event("startup")
+async def startup_event():
+    print("=====================================")
+    print(" FastAPI Application Started")
+    print(" Environment : Production")
+    print("=====================================")
