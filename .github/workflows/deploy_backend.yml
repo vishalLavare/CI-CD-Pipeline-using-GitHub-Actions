@@ -1,65 +1,77 @@
-name: Deploy Backend to EC2 (Dev)
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
 
-on:
-  push:
-    branches:
-      - main
+try:
+    from app.routes import router
+except ModuleNotFoundError:
+    from routes import router
 
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
+app = FastAPI(
+    title="Production CI/CD FastAPI App",
+    description="Automated deployment project built with GitHub Actions, Docker, Amazon ECR, Docker, and EC2.",
+    version="1.0.0"
+)
 
-    steps:
-      # Step 1: Checkout the repository
-      - name: Checkout code
-        uses: actions/checkout@v3
+# ==========================================================
+# CORS Configuration
+# ==========================================================
 
-      # Step 2: Configure AWS credentials
-      - name: Configure AWS credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_KEY }}
-          aws configure set default.region ap-south-1
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://dpop0vbtqm0t3.cloudfront.net",
+    "https://dpop0vbtqm0t3.cloudfront.net",
+    "http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000",
+]
 
-      # Step 3: Login to Amazon ECR
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-      # Step 4: Build, Tag, and Push Backend Image to ECR
-      - name: Build, Tag, and Push Backend Image to ECR
-        run: |
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest ./backend
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+# ==========================================================
+# Register API Routes
+# ==========================================================
 
-      # Step 5: Copy Deployment Script to EC2
-      - name: Copy Deployment Script to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          source: "scripts/deploy.sh"
-          target: "/home/${{ secrets.EC2_USERNAME }}/deploy/"
+app.include_router(router, prefix="/api/v1")
 
-      # Step 6: Execute Remote Backend Deployment via SSH
-      - name: Execute Remote Backend Deployment via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-          AWS_REGION: ap-south-1
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          envs: AWS_ACCOUNT_ID,AWS_REGION,ECR_REPOSITORY,IMAGE_TAG,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
-          script: |
-            chmod +x /home/${{ secrets.EC2_USERNAME }}/deploy/scripts/deploy.sh
-            /home/${{ secrets.EC2_USERNAME }}/deploy/scripts/deploy.sh "$AWS_ACCOUNT_ID" "$AWS_REGION" "$ECR_REPOSITORY" "$IMAGE_TAG"
+# ==========================================================
+# Root Endpoint
+# ==========================================================
+
+@app.get("/")
+def root():
+    return {
+        "message": "Welcome to the Production CI/CD FastAPI Application!",
+        "status": "Running",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+# ==========================================================
+# Health Endpoint
+# ==========================================================
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "environment": "production"
+    }
+
+# ==========================================================
+# Startup Event
+# ==========================================================
+
+@app.on_event("startup")
+async def startup_event():
+    print("=====================================")
+    print(" FastAPI Application Started")
+    print(" Environment : Production")
+    print("=====================================")
