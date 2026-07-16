@@ -262,9 +262,9 @@ Once the GitHub Actions workflow runs successfully and turns green, verify your 
 1. **Access the Frontend URL:**
    Open a browser and go to your CloudFront distribution domain name (e.g. `https://d123456789.cloudfront.net`).
 2. **Access the Backend API (via Load Balancer):**
-   Verify the API is running by navigating to the Load Balancer health endpoint: `https://demo-1555652099.ap-south-1.elb.amazonaws.com:8000/health`.
+   Verify the API is running by navigating to the Load Balancer health endpoint: `http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000/health`.
 3. **Connect Frontend to Backend:**
-   The frontend build is preconfigured to use the Load Balancer URL `https://demo-1555652099.ap-south-1.elb.amazonaws.com:8000`. If you need to manually change or override this endpoint, you can enter it in the top-right configuration input box of the CloudFront dashboard and click **Save**.
+   The frontend build is preconfigured to use the Load Balancer URL `http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000`. If you need to manually change or override this endpoint, you can enter it in the top-right configuration input box of the CloudFront dashboard and click **Save**.
    *Test CRUD tasks (Add Task, Delete Task, Status checks) to verify connectivity.*
 
 ---
