@@ -43,6 +43,7 @@ COPY --from=builder /install /usr/local
 
 # Copy application files
 COPY app/ ./app/
+COPY .env* ./
 
 # Set proper permissions for the non-root user
 RUN chown -R appuser:appgroup /home/appuser/app

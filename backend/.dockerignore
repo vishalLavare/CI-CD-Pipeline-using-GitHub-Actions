@@ -19,7 +19,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # Local configurations and credentials
-.env
+# .env
 *.local
 secrets/
 credentials.json
