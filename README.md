@@ -221,7 +221,7 @@ npm run dev
 
 | Dashboard |
 |-----------|
-| ![Dashboard](screenshots/img.png) |
+| ![Dashboard](screenshots/img1.png)(screenshots/img.png) |
 
 ---
 
