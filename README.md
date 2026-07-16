@@ -219,13 +219,11 @@ npm run dev
 
 # 📸 Screenshots
 
-| Dashboard (Backend Stopped) |
-|:---:|:---:|
-| ![Dashboard Stopped](screenshots/img2.png) |
+Dashboard (Backend Stopped) 
+![Dashboard Stopped](screenshots/img2.png) 
 
-| Dashboard (Backend Running) |
-|:---:|:---:|
-| ![Dashboard Running](screenshots/img.png) |
+Dashboard (Backend Running) 
+![Dashboard Running](screenshots/img.png) 
 
 ---
 
