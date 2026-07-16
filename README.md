@@ -1,18 +1,51 @@
-# Full-Stack CI/CD Pipeline using GitHub Actions, Docker, S3, CloudFront, ECR & EC2
+# 🚀 Automated GitOps CI/CD CRUD Dashboard
 
-## Project Title
-**Production-Grade GitOps: Static React Frontend Deployed on AWS S3 & CloudFront, with Multi-Stage FastAPI Docker Backend on ECR & EC2 via Parallel GitHub Actions Workflows**
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![GitHub Actions](https://img.shields.io/badge/github%20actions-%232088FF.svg?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com)
+[![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361dafb)](https://reactjs.org)
+
+> **Production-ready GitOps CI/CD pipeline** that automatically builds, tests, containerizes, and deploys a React static frontend (hosted on Amazon S3 + CloudFront CDN via Origin Access Control) and a FastAPI backend Docker container on Amazon EC2 via ECR and parallel GitHub Actions workflows.
 
 ---
 
-## 1. Goal & Architecture Overview
+## 📌 Table of Contents
 
-This project implements a secure, fully automated production-style GitOps deployment. 
-1. **Frontend:** A React web application utilizing Node.js for bundling and compilation. It is hosted on Amazon S3 and distributed via Amazon CloudFront (CDN) for low-latency delivery. Access to the S3 bucket is restricted exclusively to CloudFront via **Origin Access Control (OAC)** to ensure data security.
-2. **Backend:** A containerized Python FastAPI application running on an AWS EC2 instance. It handles CRUD and health API operations, and is exposed via a secure Docker container behind port `8000`.
-3. **CI/CD Pipeline:** A parallelized GitHub Actions workflow triggers upon git pushes to the `main` branch. It compiles the Node.js frontend and syncs static files to S3, invalidates the CloudFront cache, and concurrently builds/tags/pushes the Docker backend to Amazon ECR, followed by remote deployment orchestration on EC2 via SSH.
+1. [Project Overview](#-project-overview)
+2. [System Architecture](#-system-architecture)
+3. [Technology Stack](#-technology-stack)
+4. [Project Structure](#-project-structure)
+5. [CORS & Environment Configurations](#-cors--environment-configurations)
+6. [CI/CD Workflow Pipeline](#-cicd-workflow-pipeline)
+7. [AWS Infrastructure Provisioning Guide](#-aws-infrastructure-provisioning-guide)
+8. [GitHub Secrets Configuration](#-github-secrets-configuration)
+9. [Local Development & Testing](#-local-development--testing)
+10. [Docker Deployment Commands](#-docker-deployment-commands)
+11. [FastAPI Endpoints](#-fastapi-endpoints)
+12. [Security & HTTPS Architecture Notes](#-security--https-architecture-notes)
+13. [Common Troubleshooting Guide](#-common-troubleshooting-guide)
+14. [Portfolio & Resume Resources](#-portfolio--resume-resources)
+15. [Future Improvements](#-future-improvements)
+16. [Author](#-author)
 
-### System Architecture Diagram
+---
+
+## 📌 Project Overview
+
+This repository demonstrates a production-grade full-stack deployment model on AWS. 
+
+Whenever code is pushed to the `main` branch, **GitHub Actions** automatically kicks off parallel deployment workflows:
+1. **Frontend Pipeline:** Compiles Node.js static React assets, syncs files to an Amazon S3 bucket, and creates a CloudFront cache invalidation to propagate updates globally with low latency.
+2. **Backend Pipeline:** Builds a multi-stage Docker image, pushes it to Amazon Elastic Container Registry (ECR), SSHs into the EC2 instance, pulls the updated image, and restarts the FastAPI service container with automated health validation checks.
+
+Access to the S3 bucket is restricted exclusively to CloudFront via **Origin Access Control (OAC)** to prevent direct public access and keep the frontend host completely secure.
+
+---
+
+## 🏗️ System Architecture
+
+### Component Architecture Diagram
 ```mermaid
 graph TD
     subgraph Client Tier
@@ -43,7 +76,7 @@ graph TD
     end
 ```
 
-### CI/CD Workflow Sequence Diagram
+### CI/CD Deployment Sequence Diagram
 ```mermaid
 sequenceDiagram
     autonumber
@@ -75,7 +108,7 @@ sequenceDiagram
         EC2->>ECR: Login using Instance IAM Profile
         EC2->>ECR: Pull updated image
         EC2->>EC2: Stop and delete older fastapi_app container
-        EC2->>EC2: Launch container (port 8000, restart=unless-stopped)
+        EC2->>EC2: Launch container (port 8000, env loading)
         EC2->>EC2: Verify local endpoint (/health)
         EC2-->>GitHub: Return success status
         deactivate EC2
@@ -86,89 +119,115 @@ sequenceDiagram
 
 ---
 
-## 2. Workspace Directory Layout
+## 🚀 Technology Stack
+
+* **Frontend:** React, Vite, HTML5, Vanilla CSS3, JavaScript
+* **Backend:** FastAPI, Python 3.11, Uvicorn, Python-Dotenv
+* **DevOps & Containers:** Docker, Docker Compose, Docker Hub, Amazon ECR, Bash Scripts
+* **CI/CD:** GitHub Actions Runner, Appleboy SSH Action, Appleboy SCP Action
+* **AWS Services:** Amazon EC2, Application Load Balancer (ALB), Amazon CloudFront (CDN), Amazon S3 (Static Hosting), IAM, OAC (Origin Access Control)
+
+---
+
+## 📂 Project Structure
 
 ```
-project/
+.
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml          # [workflows/deploy.yml]( CICDproject/.github/workflows/deploy.yml) - Dual-job CI/CD pipeline
+│       ├── deploy_backend.yml   # Deploy Docker Backend to Amazon ECR & EC2
+│       └── deploy_frontend.yml  # Build & Sync React Static Frontend to S3 & CloudFront
 ├── backend/
 │   ├── app/
-│   │   ├── main.py             # [backend/app/main.py]( CICDproject/backend/app/main.py) - Uvicorn main + CORS configuration
-│   │   ├── routes.py           # [backend/app/routes.py]( CICDproject/backend/app/routes.py) - Mock task db CRUD routes
-│   │   └── requirements.txt    # [backend/app/requirements.txt]( CICDproject/backend/app/requirements.txt) - FastAPI dependencies
-│   ├── Dockerfile              # [backend/Dockerfile]( CICDproject/backend/Dockerfile) - Multi-stage container file
-│   ├── .dockerignore           # [backend/.dockerignore]( CICDproject/backend/.dockerignore) - Excluded container files
-│   └── docker-compose.yml      # [backend/docker-compose.yml]( CICDproject/backend/docker-compose.yml) - Backend local orchestration
+│   │   ├── main.py              # Application setup, CORS config, and server init
+│   │   ├── routes.py            # REST API endpoints for in-memory CRUD operations
+│   │   └── requirements.txt     # Python libraries (FastAPI, Uvicorn, Dotenv)
+│   ├── Dockerfile               # Multi-stage optimized production build stage
+│   ├── docker-compose.yml       # Local developer Docker configuration
+│   ├── .dockerignore            # Files excluded from Docker context
+│   ├── .env                     # Production environment configuration (git ignored)
+│   └── .env.example             # Configuration template for developers
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx             # [frontend/src/App.jsx]( CICDproject/frontend/src/App.jsx) - React dynamic client
-│   │   ├── App.css             # [frontend/src/App.css]( CICDproject/frontend/src/App.css) - Panel styles
-│   │   ├── index.css           # [frontend/src/index.css]( CICDproject/frontend/src/index.css) - Palette setup
-│   │   └── main.jsx            # [frontend/src/main.jsx]( CICDproject/frontend/src/main.jsx) - React DOM mounting
-│   ├── index.html              # [frontend/index.html]( CICDproject/frontend/index.html) - Main layout
-│   ├── package.json            # [frontend/package.json]( CICDproject/frontend/package.json) - Node.js scripts
-│   └── vite.config.js          # [frontend/vite.config.js]( CICDproject/frontend/vite.config.js) - Bundler configurations
+│   ├── public/                  # Public assets
+│   ├── src/                     # React App frontend codebase
+│   │   ├── App.jsx              # Main App component with UI layout & fetch queries
+│   │   ├── App.css              # Frontend CSS rules
+│   │   ├── index.css            # Base Tailwind / Custom style utilities
+│   │   └── main.jsx             # React client-side renderer mount point
+│   ├── package.json             # NPM dependencies & build commands
+│   ├── vite.config.js           # Vite server, environment & proxy settings
+│   └── index.html               # Main index template
 ├── scripts/
-│   └── deploy.sh               # [scripts/deploy.sh]( CICDproject/scripts/deploy.sh) - Remote shell container runner
-├── screenshots/
-│   └── README.md               # [screenshots/README.md]( CICDproject/screenshots/README.md) - Screenshot evidence checklist
-├── .gitignore                  # [.gitignore]( CICDproject/.gitignore) - Git exclusion list
-└── README.md                   # [README.md]( CICDproject/README.md) - Master documentation (this file)
+│   └── deploy.sh                # SSH Deployment orchestration script running on EC2
+└── README.md                    # Main Project Documentation
 ```
 
 ---
 
-## 3. Local Installation & Testing
+## 🔐 CORS & Environment Configurations
 
-You can run both the frontend and backend locally to test interactions before pushing to AWS.
+The FastAPI backend uses `python-dotenv` to dynamically configure CORS origins. This avoids hardcoding internal endpoint addresses directly into codebase releases.
 
-### 3.1 Run FastAPI Backend
-1. Navigate to the `backend/` folder:
-   ```bash
-   cd backend
-   ```
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv .venv
-   # On Windows:
-   .venv\Scripts\activate
-   # On macOS/Linux:
-   source .venv/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r app/requirements.txt
-   ```
-4. Start the server using Uvicorn (run from the `backend/` directory to preserve package search context):
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+### 📝 Local Configurations (`.env`)
+Create a file named `.env` in the `backend/` directory based on the template:
+```env
+# FastAPI Backend Configuration
+PORT=8000
+ENV_TYPE=development
 
-### 3.2 Run React Frontend
-1. Open a new terminal and navigate to the `frontend/` folder:
-   ```bash
-   cd frontend
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the dev server:
-   ```bash
-   npm run dev
-   ```
-4. Open the displayed URL (typically `http://localhost:5173/`).
+# Comma-separated list of trusted origins allowed to cross-query the API
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://dpop0vbtqm0t3.cloudfront.net,https://dpop0vbtqm0t3.cloudfront.net,http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000
+```
+
+### ⚙️ How it is Loaded in Code:
+```python
+import os
+from dotenv import load_dotenv
+
+# Load configurations from .env
+load_dotenv()
+
+# Read from environment and extract custom list
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS")
+if allowed_origins_env:
+    origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+else:
+    # Fallback to local defaults if no env variable is specified
+    origins = ["http://localhost:5173", "http://localhost:3000"]
+```
 
 ---
 
-## 4. AWS Infrastructure Provisioning Guide
+## ⚙️ CI/CD Workflow Pipeline
 
-Follow these commands to configure the secure production AWS environment.
+```
+[Developer Push to main]
+          │
+          ├──► [Frontend Job: S3 + CloudFront]
+          │     ├── Setup Node.js Environment
+          │     ├── Install dependencies & Run 'npm run build'
+          │     ├── Upload built outputs to Amazon S3
+          │     └── Create global CloudFront cache invalidation (/*)
+          │
+          └──► [Backend Job: ECR + EC2 Container]
+                ├── Build production-ready multi-stage Docker image
+                ├── Push Docker image to Amazon ECR
+                ├── Copy 'deploy.sh' orchestration script to EC2 via SCP
+                └── SSH into EC2 & trigger 'deploy.sh':
+                     ├── Log in to Amazon ECR via EC2 AWS Profile
+                     ├── Pull latest ECR image tag
+                     ├── Stop & remove existing app container
+                     ├── Run container & load env variables
+                     └── Run local loop check verifying /health is 200 OK
+```
 
-### 4.1 Set Up ECR Repository
-Create the ECR repository to store your Docker images:
+---
+
+## ☁️ AWS Infrastructure Provisioning Guide
+
+Follow these AWS CLI helper configurations to configure components.
+
+### 1️⃣ Set Up ECR Repository
 ```bash
 aws ecr create-repository \
     --repository-name devops-fastapi-app \
@@ -177,25 +236,22 @@ aws ecr create-repository \
     --encryption-configuration encryptionType=AES256
 ```
 
-### 4.2 Create S3 Bucket for Frontend Hosting
-1. Create the bucket (choose a unique bucket name):
-   ```bash
-   aws s3api create-bucket \
-       --bucket devops-frontend-static-bucket \
-       --region ap-south-1
-   ```
-2. Disable public access (we will configure CloudFront to access it privately):
-   ```bash
-   aws s3api put-public-access-block \
-       --bucket devops-frontend-static-bucket \
-       --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
-   ```
+### 2️⃣ Create S3 Bucket for Frontend Hosting
+```bash
+# Create the S3 Bucket
+aws s3api create-bucket \
+    --bucket devops-frontend-static-bucket \
+    --region ap-south-1 \
+    --create-bucket-configuration LocationConstraint=ap-south-1
 
-### 4.3 Configure S3 Bucket Policy for Origin Access Control (OAC)
-CloudFront uses **Origin Access Control (OAC)** to fetch private assets from S3. Attach the following bucket policy.
+# Apply Public Access Block (bucket must be completely private)
+aws s3api put-public-access-block \
+    --bucket devops-frontend-static-bucket \
+    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+```
 
-#### Save as `s3-bucket-policy.json`
-*(Replace `devops-frontend-static-bucket`, `123456789012`, and `E3XXXXXXXXXXXX` with your actual S3 bucket name, AWS Account ID, and CloudFront Distribution ID respectively)*:
+### 3️⃣ Configure S3 Bucket Policy for Origin Access Control (OAC)
+Save the policy text as `s3-bucket-policy.json` (replacing placeholder variables):
 ```json
 {
     "Version": "2012-10-17",
@@ -217,84 +273,181 @@ CloudFront uses **Origin Access Control (OAC)** to fetch private assets from S3.
     ]
 }
 ```
-Apply the policy to the bucket:
+Apply the bucket policy:
 ```bash
 aws s3api put-bucket-policy \
     --bucket devops-frontend-static-bucket \
     --policy file://s3-bucket-policy.json
 ```
 
-### 4.4 Configure AWS CloudFront Distribution
-Configure a CloudFront Web Distribution using the AWS Management Console or AWS CLI:
-* **Origin domain:** Select your S3 bucket.
-* **Origin access:** Select "Origin access control settings (recommended)" and create a control setting with signature behavior set to "Sign requests".
-* **Default cache behavior:** Redirect HTTP to HTTPS.
-* **Default root object:** `index.html`.
-
-### 4.5 Launch EC2 Instance & IAM Role Configuration
-Follow sections `6.2`, `6.3`, `6.4`, and `6.5` in your initial workflow guide to create the EC2 security group, configure the `EC2-ECR-ReadOnly-Role` IAM Instance Profile, launch the Ubuntu EC2 server, and install Docker, AWS CLI, and Git.
-
 ---
 
-## 5. GitHub Repository Secrets Setup
+## 🔑 GitHub Secrets Configuration
 
-Navigate to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret** and configure the following 10 secrets:
+Add the following environment values under **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**:
 
-| Secret Name | Description / Example Value |
+| Secret Name | Description / Value |
 | :--- | :--- |
-| `AWS_ACCESS_KEY_ID` | IAM User access key (must have permission to push to ECR, sync to S3, and invalidate CloudFront). |
+| `AWS_ACCESS_KEY_ID` | IAM User access key with S3 sync, ECR push, and CF invalidation permissions. |
 | `AWS_SECRET_ACCESS_KEY` | IAM User secret access key. |
 | `AWS_REGION` | AWS region of your infrastructure (e.g. `ap-south-1`). |
 | `AWS_ACCOUNT_ID` | Your 12-digit AWS Account ID. |
 | `ECR_REPOSITORY` | ECR repository name (e.g. `devops-fastapi-app`). |
 | `EC2_HOST` | Public IP or DNS of the backend EC2 server. |
-| `EC2_USERNAME` | OS user for SSH authentication (e.g. `ubuntu`). |
-| `SSH_PRIVATE_KEY` | SSH Private Key content (`.pem` file). |
-| `AWS_S3_BUCKET` | The target S3 Bucket name (e.g. `devops-frontend-static-bucket`). |
+| `EC2_USERNAME` | OS login username for the EC2 server (e.g. `ubuntu`). |
+| `SSH_PRIVATE_KEY` | Raw content of the `.pem` file used for SSH auth. |
+| `AWS_S3_BUCKET` | Destination S3 Bucket Name (e.g. `devops-frontend-static-bucket`). |
 | `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront Distribution ID (e.g. `E2XXXXXXXXXX`). |
 
 ---
 
-## 6. Live Endpoint Verification
+## 🧪 Local Development & Testing
 
-Once the GitHub Actions workflow runs successfully and turns green, verify your deployment:
+### Backend Startup
+```bash
+cd backend
+python -m venv .venv
 
-1. **Access the Frontend URL:**
-   Open a browser and go to your CloudFront distribution domain name (e.g. `https://d123456789.cloudfront.net`).
-2. **Access the Backend API (via Load Balancer):**
-   Verify the API is running by navigating to the Load Balancer health endpoint: `http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000/health`.
-3. **Connect Frontend to Backend:**
-   The frontend build is preconfigured to use the Load Balancer URL `http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000`. If you need to manually change or override this endpoint, you can enter it in the top-right configuration input box of the CloudFront dashboard and click **Save**.
-   *Test CRUD tasks (Add Task, Delete Task, Status checks) to verify connectivity.*
+# Activate the venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
 
----
+# Install dependencies & run Dev server
+pip install -r app/requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-## 7. Common Deployment Errors & Solutions
-
-### 7.1 CloudFront AccessDenied Error (403)
-* **Cause:** The S3 bucket policy is blocking CloudFront access, or the S3 default root object is not set to `index.html` on CloudFront.
-* **Fix:** Verify the S3 bucket policy matches section `4.3`, and ensure the CloudFront distribution configuration has `index.html` set as its "Default root object".
-
-### 7.2 CORS Blocks in Browser console (`Access-Control-Allow-Origin` missing)
-* **Cause:** The FastAPI backend does not permit cross-origin requests from the CloudFront HTTPS domain name.
-* **Fix:** Ensure CORS configurations are registered in [main.py]( CICDproject/backend/app/main.py). For testing, allow `allow_origins=["*"]`. For production hardening, restrict it to `allow_origins=["https://<YOUR-DISTRIBUTION-ID>.cloudfront.net"]`.
-
-### 7.3 `AccessDenied` when performing `s3 sync` or `create-invalidation`
-* **Cause:** The IAM user credentials configured in GitHub Secrets do not have the required permissions for S3 and CloudFront actions.
-* **Fix:** Attach a policy granting `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, `s3:ListBucket`, and `cloudfront:CreateInvalidation` to your GitHub Actions deployer IAM user.
+### Frontend Startup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:5173` to test interaction and API queries.
 
 ---
 
-## 8. Portfolio & Resume Resources
+## 🐳 Docker Deployment Commands
+
+If testing or deploying containers locally, you can use these Docker commands:
+
+### Build Docker Image
+```bash
+docker build -t cicd-app ./backend
+```
+
+### Run Docker Container with `.env` settings
+```bash
+docker run -d \
+  --name fastapi_app \
+  -p 8000:8000 \
+  --env-file ./backend/.env \
+  cicd-app
+```
+
+### Local Compose Orchestration
+```bash
+cd backend
+docker-compose up --build -d
+```
+
+### Verification & Debugging Commands
+```bash
+# Check running containers
+docker ps
+
+# Inspect logs
+docker logs fastapi_app
+
+# Enter container shell
+docker exec -it fastapi_app sh
+```
+
+---
+
+## 🚀 FastAPI Endpoints
+
+### 🟢 Root Endpoint
+* **Route:** `GET /`
+* **Response:**
+```json
+{
+    "message": "Welcome to the Production CI/CD FastAPI Application!",
+    "status": "Running",
+    "version": "1.0.0",
+    "docs": "/docs",
+    "health": "/health"
+}
+```
+
+### 🟢 Health Endpoint
+* **Route:** `GET /health`
+* **Response:**
+```json
+{
+    "status": "healthy",
+    "timestamp": "2026-07-16T14:00:00Z",
+    "environment": "production"
+}
+```
+
+### 🔵 CRUD Tasks API endpoints
+* **Fetch All Tasks:** `GET /api/v1/items`
+* **Create Task:** `POST /api/v1/items`
+* **Update Task Details:** `PUT /api/v1/items/{id}`
+* **Delete Task:** `DELETE /api/v1/items/{id}`
+
+---
+
+## ⚠️ Security & HTTPS Architecture Notes
+
+When S3/CloudFront hosts frontend dashboards under `https://`, modern web browsers enforce strict mixed-content restrictions. This blocks connections to raw `http://<EC2-IP>:8000` endpoints.
+
+To fix this, utilize the recommended production load-balanced architecture:
+
+```
+[User Browser (HTTPS)]
+        │ (Queries CloudFront Domain via HTTPS)
+        ▼
+[Amazon CloudFront CDN (HTTPS)]
+        │ (Decrypts SSL certificate via ACM)
+        ▼
+[Application Load Balancer (ALB) (HTTPS / Port 443)]
+        │ (Proxies traffic down to Private Subnet via HTTP)
+        ▼
+[EC2 Docker Container Instance (HTTP / Port 8000)]
+```
+
+* Ensure that all CORS entries in `.env` include both the `http://` and `https://` schemes of your CloudFront distribution url.
+
+---
+
+## 🛠️ Common Troubleshooting Guide
+
+### ❌ CloudFront 403 Access Denied
+* **Cause:** The S3 bucket policy is blocking public access, S3 bucket permissions do not trust OAC, or S3 default root object is not set to `index.html`.
+* **Solution:** Verify the S3 bucket policy matches [Section 3](#3-configure-s3-bucket-policy-for-origin-access-control-oac) and matches the correct Distribution ID. Ensure default root object in CloudFront distribution is explicitly set to `index.html`.
+
+### ❌ CORS Blocks in Console (`Access-Control-Allow-Origin` missing)
+* **Cause:** The API server received cross-origin API calls but rejected the request header because the domain was not listed in `origins`.
+* **Solution:** Confirm your CloudFront distribution is present inside the `ALLOWED_ORIGINS` variable in [.env](file:///f:/project-cv/CICD%20project/backend/.env) (comma-separated, no trailing slash).
+
+### ❌ Github Actions SSH Connection Timeout
+* **Cause:** EC2 security group rules do not permit incoming requests on Port 22 from Github Action runner pools.
+* **Solution:** In AWS EC2 console, configure security group rules to permit TCP port 22 incoming access. For testing, set source to `0.0.0.0/0`, or restrict it using automated GitHub IP whitelist scripts.
+
+---
+
+## 📊 Portfolio & Resume Resources
 
 ### ATS-Friendly Project Bullet Points
-```
-* Designed and deployed a secure, automated CI/CD pipeline using GitHub Actions, parallelizing frontend and backend build tasks to reduce release cycles to zero.
-* Deployed a React Single-Page Application (SPA) on Amazon S3 and served it globally via CloudFront CDN, configuring Origin Access Control (OAC) to restrict bucket access.
-* Containerized a FastAPI backend using a multi-stage Dockerfile, reducing final image footprint by 75% and removing build-time packages to secure the container runtime.
-* Automated server-side updates on AWS EC2 via SSH bash scripting, integrating ECR authentication, container lifecycle controls, and endpoint health validation loops.
-* Configured secure AWS access policies using IAM Instance Profiles on EC2, replacing hardcoded credentials with short-lived, auto-rotating IAM keys.
-```
+* **CI/CD Automation:** Designed and deployed a secure, automated CI/CD pipeline using GitHub Actions, parallelizing frontend and backend build tasks to reduce release cycles to zero.
+* **Static SPA Hosting:** Deployed a React Single-Page Application (SPA) on Amazon S3 and served it globally via CloudFront CDN, configuring Origin Access Control (OAC) to restrict bucket access.
+* **Docker Containerization:** Containerized a FastAPI backend using a multi-stage Dockerfile, reducing final image footprint by 75% and removing build-time packages to secure the container runtime.
+* **Automated EC2 Orchestration:** Automated server-side updates on AWS EC2 via SSH bash scripting, integrating ECR authentication, container lifecycle controls, and endpoint health validation loops.
+* **IAM Security Hardening:** Configured secure AWS access policies using IAM Instance Profiles on EC2, replacing hardcoded credentials with short-lived, auto-rotating IAM keys.
 
 ### Resume Project Summary
 > **Multi-Tier GitOps CI/CD Pipeline (GitHub Actions, React, Node.js, Docker, S3, CloudFront, ECR, EC2)**
@@ -302,3 +455,26 @@ Once the GitHub Actions workflow runs successfully and turns green, verify your 
 
 ### GitHub Repository Description
 > 🚀 Full-stack GitOps CI/CD pipeline. React frontend built with Node.js, hosted on S3 and distributed via CloudFront CDN using OAC. FastAPI backend containerized with multi-stage Docker builds and deployed on EC2 via ECR and parallel GitHub Actions workflows.
+
+---
+
+## 📈 Future Improvements
+
+* [ ] Automate SSL certificates provisioning via AWS Certificate Manager (ACM).
+* [ ] Bind ALB using Route 53 to custom domain names.
+* [ ] Configure Auto Scaling Groups (ASG) and Target Groups for high availability.
+* [ ] Integrate Terraform to manage infrastructure provisioning as code (IaC).
+* [ ] Implement Blue/Green zero-downtime deployment patterns.
+
+---
+
+## 👨‍💻 Author
+
+**Vishal Lavare**
+* **Role:** Cloud Engineer | DevOps Specialist
+* **Skills:** AWS, Docker, Kubernetes, Terraform, FastAPI, CI/CD Pipelines, GitHub Actions
+* **GitHub:** [@vishalLavare](https://github.com/vishalLavare)
+
+---
+
+> ⭐ **If you found this project implementation useful, please consider giving this repository a Star!**

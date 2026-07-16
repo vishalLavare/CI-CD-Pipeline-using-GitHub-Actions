@@ -1,49 +1,29 @@
-import os
-from datetime import datetime
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-load_dotenv()
+from datetime import datetime
 
 try:
     from app.routes import router
 except ModuleNotFoundError:
     from routes import router
 
-
-# -------------------------------------------------------
-# Environment Variables
-# -------------------------------------------------------
-
-APP_NAME = os.getenv("APP_NAME", "Production CI/CD FastAPI App")
-APP_VERSION = os.getenv("APP_VERSION", "1.0.0")
-APP_ENV = os.getenv("APP_ENV", "production")
-
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "")
-
-origins = [
-    origin.strip()
-    for origin in ALLOWED_ORIGINS.split(",")
-    if origin.strip()
-]
-
-
-# -------------------------------------------------------
-# FastAPI Application
-# -------------------------------------------------------
-
 app = FastAPI(
-    title=APP_NAME,
-    description="Automated deployment project built with GitHub Actions, Docker, Amazon ECR, EC2, Application Load Balancer, and CloudFront.",
-    version=APP_VERSION,
+    title="Production CI/CD FastAPI App",
+    description="Automated deployment project built with GitHub Actions, Docker, Amazon ECR, Docker, and EC2.",
+    version="1.0.0"
 )
 
-
-# -------------------------------------------------------
+# ==========================================================
 # CORS Configuration
-# -------------------------------------------------------
+# ==========================================================
+
+origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://dpop0vbtqm0t3.cloudfront.net",
+    "https://dpop0vbtqm0t3.cloudfront.net",
+    "http://demo-1555652099.ap-south-1.elb.amazonaws.com:8000",
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,53 +33,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==========================================================
+# Register API Routes
+# ==========================================================
 
-# -------------------------------------------------------
-# API Routes
-# -------------------------------------------------------
+app.include_router(router, prefix="/api/v1")
 
-app.include_router(router, prefix="/api/v1", tags=["CRUD APIs"])
-
-
-# -------------------------------------------------------
+# ==========================================================
 # Root Endpoint
-# -------------------------------------------------------
+# ==========================================================
 
-@app.get("/", tags=["Root"])
+@app.get("/")
 def root():
     return {
-        "application": APP_NAME,
-        "version": APP_VERSION,
-        "environment": APP_ENV,
+        "message": "Welcome to the Production CI/CD FastAPI Application!",
         "status": "Running",
+        "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"
     }
 
-
-# -------------------------------------------------------
+# ==========================================================
 # Health Endpoint
-# -------------------------------------------------------
+# ==========================================================
 
-@app.get("/health", tags=["Health"])
+@app.get("/health")
 def health():
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "environment": APP_ENV,
-        "version": APP_VERSION
+        "environment": "production"
     }
 
-
-# -------------------------------------------------------
+# ==========================================================
 # Startup Event
-# -------------------------------------------------------
+# ==========================================================
 
 @app.on_event("startup")
 async def startup_event():
-    print("=" * 60)
-    print(f"Application : {APP_NAME}")
-    print(f"Version     : {APP_VERSION}")
-    print(f"Environment : {APP_ENV}")
-    print(f"CORS Origins: {origins}")
-    print("=" * 60)
+    print("=====================================")
+    print(" FastAPI Application Started")
+    print(" Environment : Production")
+    print("=====================================")
