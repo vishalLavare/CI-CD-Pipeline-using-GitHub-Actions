@@ -219,9 +219,9 @@ npm run dev
 
 # 📸 Screenshots
 
-| Dashboard |
-|-----------|
-| ![Dashboard](screenshots/img1.png)(screenshots/img.png) |
+| Dashboard (Backend Running) | Dashboard (Backend Stopped) |
+|:---:|:---:|
+| ![Dashboard Running](screenshots/img2.png) | ![Dashboard Stopped](screenshots/img.png) |
 
 ---
 
